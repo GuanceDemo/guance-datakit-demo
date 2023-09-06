@@ -110,7 +110,7 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         - name: ENV_DATAWAY
-          value: https://openway.guance.com?token=$TOKEN
+          value: https://openway.guance.com?token=<your-token>
         - name: ENV_GLOBAL_TAGS
           value: host=__datakit_hostname,host_ip=__datakit_ip,cluster_name_k8s=k8s-test
         - name: ENV_NAMESPACE
