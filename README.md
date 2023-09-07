@@ -7,7 +7,7 @@
 ## 安装
 - 下载yaml文件
 ```shell
-git clone https://github.com/GuanceDemo/guance-java-ruoyi-demo.git
+git clone https://github.com/GuanceDemo/guance-datakit-demo.git
 cd deployment
 ```
 - 更新 datakit.yaml 中的 ENV_DATAWAY
