@@ -7,7 +7,7 @@
 ## 准备物料
 - 下载yaml文件
 ```shell
-git clone https://github.com/GuanceDemo/guance-java-ruoyi-demo.git
+git clone https://github.com/GuanceDemo/guance-datakit-demo.git
 cd deployment
 ```
 
