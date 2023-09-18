@@ -11,8 +11,8 @@ git clone https://github.com/GuanceDemo/guance-datakit-demo.git
 cd deployment
 ```
 
-## 安装 metric-server
-> 若 Kubernetes 集群已安装 metric-server，可跳过该步骤
+## 安装 Metrics-Server
+> 若 Kubernetes 集群已安装 metrics-server，可跳过该步骤
 
 ```shell
 kubectl apply -f components.yaml
