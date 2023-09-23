@@ -110,7 +110,7 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         - name: ENV_DATAWAY
-          value: https://openway.guance.com?token=<your-token>
+          value: https://openway.guance.com?token=<token>
         - name: ENV_GLOBAL_TAGS
           value: host=__datakit_hostname,host_ip=__datakit_ip,cluster_name_k8s=k8s-demo
         - name: ENV_NAMESPACE
@@ -204,6 +204,8 @@ spec:
         - mountPath: /usr/local/datakit/conf.d/opentelemetry/opentelemetry.conf
           name: datakit-conf
           subPath: opentelemetry.conf
+        - name: ruoyi-log
+          mountPath: /data/logs
         workingDir: /usr/local/datakit
       # # ---iploc-start
       initContainers:
@@ -246,6 +248,10 @@ spec:
       - hostPath:
           path: /var/lib
         name: lib
+      - name: ruoyi-log
+        hostPath:
+          path: /data/logs
+          type: DirectoryOrCreate
 
       # # ---iploc-start
       - emptyDir: {}
@@ -427,7 +433,7 @@ data:
       ignore = [""]
 
       # 数据来源，如果为空，则默认使用 'default'
-      source = ""
+      source = "ruoyi-log"
 
       # 新增标记tag，如果为空，则默认使用 $source
       service = ""
