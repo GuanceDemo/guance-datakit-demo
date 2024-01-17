@@ -4,6 +4,7 @@ metadata:
   name: datakit
 
 ---
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -13,7 +14,7 @@ rules:
   resources: ["clusterroles"]
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["nodes", "nodes/proxy", "namespaces", "pods", "pods/log", "events", "services", "endpoints"]
+  resources: ["nodes", "nodes/stats", "namespaces", "pods", "pods/log", "events", "services", "endpoints"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apps"]
   resources: ["deployments", "daemonsets", "statefulsets", "replicasets"]
@@ -32,6 +33,46 @@ rules:
   verbs: ["get", "list"]
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
+
+---
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: datakits.guance.com
+spec:
+  group: guance.com
+  versions:
+    - name: v1beta1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                instances:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      k8sNamespace:
+                        type: string
+                      k8sDeployment:
+                        type: string
+                      datakit/logs:
+                        type: string
+                      inputConf:
+                        type: string
+  scope: Namespaced
+  names:
+    plural: datakits
+    singular: datakit
+    kind: Datakit
+    shortNames:
+    - dk
 
 ---
 
@@ -110,15 +151,15 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         - name: ENV_DATAWAY
-          value: https://openway.guance.com?token=<token>
-        - name: ENV_GLOBAL_TAGS
+          value: https://openway.guance.com?token=tkn_3a0052c9f6d3498c8ce9ca0988fd9c82 # Fill your real Dataway server and(or) workspace token
+        - name: ENV_CLUSTER_NAME_K8S
+          value: default
+        - name: ENV_GLOBAL_HOST_TAGS
           value: host=__datakit_hostname,host_ip=__datakit_ip,cluster_name_k8s=k8s-demo
-        - name: ENV_NAMESPACE
-          value: k8s-demo
         - name: ENV_GLOBAL_ELECTION_TAGS
-          value: cluster_name_k8s=k8s-demo
+          value: ""                                            # Default not set
         - name: ENV_DEFAULT_ENABLED_INPUTS
-          value: cpu,disk,diskio,mem,swap,system,hostobject,net,host_processes,container,ebpf,rum,statsd,profile
+          value: dk,cpu,disk,diskio,mem,swap,system,hostobject,net,host_processes,container,ebpf,rum,statsd,profile
         - name: ENV_ENABLE_ELECTION
           value: enable
         - name: ENV_LOG
@@ -145,11 +186,17 @@ spec:
           value: /rootfs/dev
         - name: HOST_ROOT
           value: /rootfs
+        # - name: ENV_GIT_BRANCH
+        #   value: master
+        # - name: ENV_GIT_INTERVAL
+        #   value: 10s
+        # - name: ENV_GIT_URL
+        #   value: http://username:password@github.com/path/to/repository.git
         # # ---iploc-start
         - name: ENV_IPDB
           value: iploc
         # # ---iploc-end
-        image: pubrepo.jiagouyun.com/datakit/datakit:1.15.1
+        image: pubrepo.guance.com/datakit/datakit:1.23.1
         imagePullPolicy: Always
         name: datakit
         ports:
@@ -182,6 +229,8 @@ spec:
           name: run
         - mountPath: /sys/kernel/debug
           name: debugfs
+        - mountPath: /var/lib/containerd/container_logs
+          name: container-logs
         # # ---iploc-start
         - mountPath: /usr/local/datakit/data/ipdb/iploc/
           name: datakit-ipdb
@@ -214,7 +263,7 @@ spec:
           command:
             - bash
             - -c
-          image: pubrepo.jiagouyun.com/datakit/iploc:1.0
+          image: pubrepo.guance.com/datakit/iploc:1.0
           imagePullPolicy: IfNotPresent
           name: init-volume
           resources: {}
@@ -233,9 +282,9 @@ spec:
       - configMap:
           name: datakit-conf
         name: datakit-conf
-      - hostPath:
-          path: /root/datakit_cache
-        name: cache
+      # - name: hellopythond
+      #   configMap:
+      #     name: python-scripts
       - hostPath:
           path: /
         name: rootfs
@@ -246,13 +295,18 @@ spec:
           path: /sys/kernel/debug
         name: debugfs
       - hostPath:
+          path: /root/datakit_cache
+        name: cache
+      - hostPath:
+          path: /var/lib/containerd/container_logs
+        name: container-logs
+      - hostPath:
           path: /var/lib
         name: lib
       - name: ruoyi-log
         hostPath:
           path: /data/logs
           type: DirectoryOrCreate
-
       # # ---iploc-start
       - emptyDir: {}
         name: datakit-ipdb
@@ -331,7 +385,7 @@ data:
     [[inputs.ddtrace]]
       endpoints = ["/v0.3/traces", "/v0.4/traces", "/v0.5/traces"]
       # ignore_resources = []
-      customer_tags = ["node_ip"]
+      customer_tags = ["error.type"]
       [inputs.ddtrace.close_resource]
         "*" = ["PUT /nacos/*","GET /nacos/*","POST /nacos/*"]
       [inputs.ddtrace.sampler]
